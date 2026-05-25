@@ -2,23 +2,13 @@
 <!--
   SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
   SPDX-License-Identifier: GPL-2.0-or-later
-  Snowflake -- hibernate / suspend-to-disk action button.
+  Snowflake (hibernate / suspend-to-disk action button).
+  Three rounded bars at 0deg, 60deg, 120deg, each as an independent
+  <rect> with its own rotate() transform. No nested groups; QtSvg has
+  historically been flaky with stacked transforms.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <!-- three radial bars at 0deg / 60deg / 120deg, with arrow caps -->
-  <g>
-    <rect x="11.1" y="2" width="1.8" height="20" rx="0.9"/>
-    <path d="M9.2 4 L12 6.8 L14.8 4 L13.4 2.6 L12 4 L10.6 2.6 Z"/>
-    <path d="M9.2 20 L12 17.2 L14.8 20 L13.4 21.4 L12 20 L10.6 21.4 Z"/>
-  </g>
-  <g transform="rotate(60 12 12)">
-    <rect x="11.1" y="2" width="1.8" height="20" rx="0.9"/>
-    <path d="M9.2 4 L12 6.8 L14.8 4 L13.4 2.6 L12 4 L10.6 2.6 Z"/>
-    <path d="M9.2 20 L12 17.2 L14.8 20 L13.4 21.4 L12 20 L10.6 21.4 Z"/>
-  </g>
-  <g transform="rotate(120 12 12)">
-    <rect x="11.1" y="2" width="1.8" height="20" rx="0.9"/>
-    <path d="M9.2 4 L12 6.8 L14.8 4 L13.4 2.6 L12 4 L10.6 2.6 Z"/>
-    <path d="M9.2 20 L12 17.2 L14.8 20 L13.4 21.4 L12 20 L10.6 21.4 Z"/>
-  </g>
+  <rect x="11" y="2" width="2" height="20" rx="1"/>
+  <rect x="11" y="2" width="2" height="20" rx="1" transform="rotate(60 12 12)"/>
+  <rect x="11" y="2" width="2" height="20" rx="1" transform="rotate(120 12 12)"/>
 </svg>

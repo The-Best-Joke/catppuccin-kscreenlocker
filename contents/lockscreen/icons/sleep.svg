@@ -2,8 +2,11 @@
 <!--
   SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
   SPDX-License-Identifier: GPL-2.0-or-later
-  Crescent moon -- sleep / suspend-to-ram action button.
+  Crescent moon (sleep / suspend-to-ram action button).
+  Drawn as a 9-radius outer circle minus a 7-radius circle offset to the
+  upper-right, combined via fill-rule="evenodd" so QtSvg renders a true
+  crescent without relying on precision-sensitive arc geometry.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd">
+  <path d="M3 12a9 9 0 1 0 18 0 9 9 0 1 0 -18 0z M8 10a7 7 0 1 1 14 0 7 7 0 1 1 -14 0z"/>
 </svg>
