@@ -17,7 +17,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
 </p>
 
 <p align="center">
-	<img src="assets/preview.png"/>
+	<img src="assets/preview.webp"/>
 </p>
 
 ## Previews
