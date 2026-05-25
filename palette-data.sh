@@ -5,6 +5,10 @@
 # Source: https://github.com/catppuccin/catppuccin (official style guide).
 # Sourced by install.sh; do not run directly.
 
+# shellcheck shell=bash
+# Variables below are consumed by install.sh after sourcing.
+# shellcheck disable=SC2034
+
 FLAVORS=(latte frappe macchiato mocha)
 ACCENTS=(rosewater flamingo pink mauve red maroon peach yellow green teal sky sapphire blue lavender)
 

@@ -161,7 +161,8 @@ ensure_target_exists() {
 
 install_theme() {
     local flavor="$1" accent="$2"
-    local id="Catppuccin-$(title "$flavor")-$(title "$accent")"
+    local id
+    id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
     ensure_target_exists
 
@@ -177,6 +178,7 @@ install_theme() {
     stage="$(mktemp -d -t catppuccin-lockscreen.XXXXXX)"
     # Expand $stage now so the trap survives this function's scope under set -u.
     # mktemp output has no shell metacharacters, so the literal interpolation is safe.
+    # shellcheck disable=SC2064
     trap "rm -rf -- '$stage'" EXIT
     cp -r "$SCRIPT_DIR/contents/lockscreen/." "$stage/"
     write_palette_qml "$flavor" "$accent" "$stage/CatPalette.qml"
@@ -252,7 +254,8 @@ EOF
 
 test_theme() {
     local flavor="$1" accent="$2"
-    local id="Catppuccin-$(title "$flavor")-$(title "$accent")"
+    local id
+    id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
     if [[ ! -x "$GREETER_BIN" ]]; then
         printf 'Error: greeter binary not found at %s\n' "$GREETER_BIN" >&2
