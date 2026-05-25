@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
 # Catppuccin palette values, one section per flavor.
 # Source: https://github.com/catppuccin/catppuccin (official style guide).
 # Sourced by install.sh; do not run directly.

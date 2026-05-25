@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 import QtQuick
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami

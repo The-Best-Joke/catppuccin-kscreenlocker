@@ -1,61 +1,170 @@
+<!--
+SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
+SPDX-License-Identifier: GPL-2.0-or-later
+-->
+
 # Catppuccin kscreenlocker
 
-A [Catppuccin](https://catppuccin.com/)-themed lock screen for KDE Plasma 6. Generates a look-and-feel package for any flavor (Latte / Frappé / Macchiato / Mocha) paired with any of the fourteen Catppuccin accent colors.
+A [Catppuccin](https://catppuccin.com/)-themed lock screen for **KDE Plasma 6**.
+Pick any of the four flavors (Latte, Frappé, Macchiato, Mocha) paired with any
+of the fourteen accent colors; the installer generates the palette and replaces
+the system lockscreen QML in place.
 
-The deliverable is the **kscreenlocker** theme under `contents/lockscreen/`. Wallpaper, clock visibility, and media-controls behavior are read directly from the kscreenlocker host (System Settings → Workspace → Screen Locking) — no per-theme config file required.
+## Screenshots
+
+> Generated with `scripts/capture-screenshots.sh` (see [Screenshots](#screenshot-helper) below).
+
+| Latte | Frappé | Macchiato | Mocha |
+|---|---|---|---|
+| ![latte-mauve](docs/screenshots/latte-mauve.png) | ![frappe-mauve](docs/screenshots/frappe-mauve.png) | ![macchiato-mauve](docs/screenshots/macchiato-mauve.png) | ![mocha-mauve](docs/screenshots/mocha-mauve.png) |
+
+## Requirements
+
+- KDE Plasma 6.x (tested on 6.6).
+- A Wayland session (the install path is Plasma-6-Wayland-specific; X11 may
+  work but is not tested).
+- `sudo` rights — the installer overwrites a system directory.
+- Recommended: [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/releases) for the intended typography (see [Fonts](#fonts) below).
 
 ## Install
 
 ```sh
-./install.sh                                       # interactive: pick flavor + accent
-./install.sh --flavor mocha --accent mauve         # non-interactive
-./install.sh --list                                # print all flavors and accents
-./install.sh --uninstall mocha mauve               # remove a variant
+# Preview in a window first (no sudo, no system files touched):
+./install.sh --test
+
+# Once happy, install for real (prompts for sudo; backs up the original lockscreen):
+./install.sh --apply
+```
+
+The installer is a **dry run by default** — any invocation without `--apply`
+just prints the `sudo` commands it would run. Pass `--apply` to actually
+execute them.
+
+All commands:
+
+```sh
+./install.sh                                        # interactive dry-run
+./install.sh --flavor mocha --accent mauve          # non-interactive dry-run
+./install.sh --flavor mocha --accent mauve --apply  # actual install
+./install.sh --test                                 # preview in a window
+./install.sh --uninstall --apply                    # restore the original
+./install.sh --list                                 # list flavors and accents
+./install.sh --version                              # print installer version
 ./install.sh --help
 ```
 
-Each invocation creates `~/.local/share/plasma/look-and-feel/Catppuccin-{Flavor}-{Accent}/`. Multiple variants can coexist; only one is active at a time.
+### What the installer does
 
-## Apply
+1. Backs up the system lockscreen to a sibling `.bak` directory (once,
+   on the first apply; never overwritten by subsequent applies).
+2. Writes the chosen flavor's palette into a `CatPalette.qml` singleton.
+3. Replaces
+   `/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/`
+   with the themed QML tree.
+4. Sets permissions to 755.
 
-Set the lock-screen theme via **System Settings → Workspace → Screen Locking → Theme** and pick the variant you just installed, or run:
+`--uninstall --apply` restores from `.bak`. The backup is preserved.
 
-```sh
-kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme Catppuccin-{Flavor}-{Accent}
+### Why sudo?
+
+Plasma 6 kscreenlocker hardcodes the lockscreen path to the system
+`org.kde.plasma.desktop` shell package; it does not consult the
+`[Greeter]Theme=` key in `kscreenlockerrc` and does not look in
+user-local Plasma directories. Themeing the lockscreen therefore
+requires overwriting that one system directory. See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for the longer explanation
+and the upstream source references that establish this.
+
+## Configuration
+
+### Behavioral toggles (System Settings)
+
+These are read from KDE's screen-locking settings; no theme files to edit:
+
+- Show clock (with the "hide when idle" sub-toggle).
+- Show media controls.
+
+Find them under **System Settings → Workspace → Screen Locking**.
+
+### Per-theme overrides (`ThemeUserConfig.qml`)
+
+Everything else — font, layout-label visibility, user-image visibility —
+lives in `ThemeUserConfig.qml`:
+
+```qml
+QtObject {
+    property string fontFamily: ""                   // "" = system default
+    property bool   showClock: true
+    property bool   showClockOnlyWhenUiVisible: false
+    property bool   showLayoutLabel: false
+    property bool   showUserImage: true
+    property bool   showMediaControls: true
+}
 ```
 
-then lock the screen to load it.
+To change a value, edit the file in this repo and re-run
+`./install.sh --apply`. (You can also `sudo $EDITOR
+/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/ThemeUserConfig.qml`
+directly, but those edits are clobbered on the next install.)
 
-**Do not use `lookandfeeltool` or `plasma-apply-lookandfeel` to apply this package.** A look-and-feel apply replaces the global theme — including color scheme, window decoration, plasma theme, icons, and cursor — to whatever this package ships (or to Breeze defaults for anything it doesn't ship). This package is lock-screen-only, so applying it that way would reset every other theming surface on your desktop. The install script's earlier `--apply` flag was removed for exactly this reason.
+### Fonts
 
-Behavioral toggles — "Show clock" (with the "hide when idle" sub-toggle) and "Show media controls" — are read from **System Settings → Workspace → Screen Locking**. No theme files need editing.
+The default is the system font (empty string in `ThemeUserConfig.qml`).
+For the intended look, install **[JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/releases)** and set:
 
-## Palette
+```qml
+property string fontFamily: "JetBrainsMono Nerd Font"
+```
 
-Colors come from a single QML singleton, `contents/lockscreen/CatPalette.qml`. The install script writes that file at install time using values from `palette-data.sh`, which mirrors the official Catppuccin palette. Eight neutrals (`base`, `mantle`, `crust`, `surface0`, `surface1`, `overlay0`, `subtext0`, `text`) plus the selected `accent` plus the semantic `red` (auth failure, action buttons) and `rosewater` (action-button hover).
+Any installed font family name works. If you set a font that isn't
+installed, Qt silently substitutes — there's no visible warning. Empty
+string is the safest default.
 
-The unlock button is the accent color; its hover/active states are derived with `Qt.lighter` / `Qt.darker` so every accent ramp works without per-accent data. The sleep / hibernate / switch-user action buttons stay Catppuccin red across all accents — they read as power-related danger affordances regardless of the rest of the theme.
+## How it looks
+
+The palette comes from a single QML singleton, `CatPalette.qml`, written
+by the installer per (flavor, accent):
+
+- **Eight neutrals** from the Catppuccin spec: `base`, `mantle`, `crust`,
+  `surface0`, `surface1`, `overlay0`, `subtext0`, `text`.
+- **One accent** — the unlock button + selected-user halo.
+- **Semantic `red`** — auth-failure border, sleep/hibernate/switch-user
+  action buttons. (These stay Catppuccin red across all accents; they
+  read as power-related danger affordances regardless of the rest of the
+  theme.)
+- **`rosewater`** — action-button hover.
+
+Derived shades (hover, active, alpha-tinted variants) are computed at
+the call site via `Qt.lighter`, `Qt.darker`, `Qt.rgba(c.r, c.g, c.b, a)`
+— no per-accent branching, every accent ramps correctly.
 
 ## Local development
 
-Clone or work directly in this directory. A mirror shell package at `~/.local/share/plasma/shells/catppuccin-lockscreen/` enables fast iteration via:
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the testing workflow,
+code style, and the constraints that came out of the wider
+investigation (no `lookandfeeltool`, no INI files, no
+`[Greeter]Theme=` writes — explained in detail there).
+
+Short version: edit anything under `contents/lockscreen/`, run
+`./install.sh --test` to preview without touching the system.
+
+### Screenshot helper
 
 ```sh
-/usr/libexec/kscreenlocker_greet --testing --shell catppuccin-lockscreen
+scripts/capture-screenshots.sh              # one shot per flavor (with mauve)
+scripts/capture-screenshots.sh --accents    # mocha with every accent
+scripts/capture-screenshots.sh --all        # 4 flavors x 14 accents = 56 shots
+scripts/capture-screenshots.sh mocha:peach latte:teal
 ```
 
-Run from a terminal so QML `console.warn` output is visible. Any edit under `contents/lockscreen/` must be mirrored into the shell package — see `CLAUDE.md`.
+Outputs to `docs/screenshots/<flavor>-<accent>.png`. Requires
+`spectacle` and a running Wayland Plasma session; greeter windows pop
+briefly during capture, so don't run it while you're using the desktop.
 
-## Layout structure (lockscreen)
+## License
 
-- `LockScreen.qml` / `LockScreenUi.qml` — root wiring, native-config readers, clock, footer.
-- `MainBlock.qml` — password prompt, login button, action buttons, media-controls Loader.
-- `SessionManagementScreen.qml` — username + prompts layout and spacing.
-- `Cat*.qml` — themed widgets (avatar, clock, password field, buttons).
-- `CatPalette.qml` (singleton) — the ten Catppuccin color values for this variant.
-- `CatTheme.qml` (singleton) — icon names and spacing constants.
-- `qmldir` — singleton declarations.
+GPL-2.0-or-later. See [`LICENSE`](LICENSE).
 
-## Why no INI config file?
-
-An earlier iteration used a `.conf` file read at runtime. Qt 6 blocks `XMLHttpRequest` from reading `file://` URLs unless `QML_XHR_ALLOW_FILE_READ=1` is set on the kscreenlocker process, which is not portable. Colors are now baked into the singleton at install time; behavioral toggles defer to the kscreenlocker host. There is nothing to configure post-install.
+QML files inherited from upstream KDE Plasma retain their original
+copyright notices and SPDX headers; project-authored files carry the
+project's own SPDX headers.
