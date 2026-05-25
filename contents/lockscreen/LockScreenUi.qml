@@ -27,20 +27,24 @@ Item {
     readonly property color catText: LockScreenLocal.CatPalette.text
     property date currentTime: new Date()
 
+    // Behavioral toggles are read from kscreenlocker's injected `config`
+    // context property (set by System Settings -> Screen Locking). The
+    // literal fallbacks below only kick in on Plasma builds where the
+    // config keys aren't exposed; they match KDE's own defaults.
     readonly property bool nativeAlwaysShowClock:
         (typeof config !== "undefined" && config.alwaysShowClock !== undefined)
             ? config.alwaysShowClock
-            : LockScreenLocal.ThemeConfig.showClock
+            : true
 
     readonly property bool nativeHideClockWhenIdle:
         (typeof config !== "undefined" && config.hideClockWhenIdle !== undefined)
             ? config.hideClockWhenIdle
-            : LockScreenLocal.ThemeConfig.showClockOnlyWhenUiVisible
+            : false
 
     readonly property bool nativeShowMediaControls:
         (typeof config !== "undefined" && config.showMediaControls !== undefined)
             ? config.showMediaControls
-            : LockScreenLocal.ThemeConfig.showMediaControls
+            : true
 
     // If we're using software rendering, draw outlines instead of shadows
     // See https://bugs.kde.org/show_bug.cgi?id=398317

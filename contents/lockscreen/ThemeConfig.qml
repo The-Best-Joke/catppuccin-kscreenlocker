@@ -35,14 +35,8 @@ QtObject {
             : f;
     }
 
-    readonly property bool showClock:
-        _bool(_user.showClock, true)
-    readonly property bool showClockOnlyWhenUiVisible:
-        _bool(_user.showClockOnlyWhenUiVisible, false)
     readonly property bool showLayoutLabel:
         _bool(_user.showLayoutLabel, false)
     readonly property bool showUserImage:
         _bool(_user.showUserImage, true)
-    readonly property bool showMediaControls:
-        _bool(_user.showMediaControls, true)
 }

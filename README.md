@@ -93,12 +93,9 @@ lives in `ThemeUserConfig.qml`:
 
 ```qml
 QtObject {
-    property string fontFamily: ""                   // "" = system default
-    property bool   showClock: true
-    property bool   showClockOnlyWhenUiVisible: false
-    property bool   showLayoutLabel: false
+    property string fontFamily: ""        // "" = system default
+    property bool   showLayoutLabel: false // shown only with >1 keyboard layout
     property bool   showUserImage: true
-    property bool   showMediaControls: true
 }
 ```
 

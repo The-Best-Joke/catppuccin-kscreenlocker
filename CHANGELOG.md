@@ -71,3 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - The look-and-feel install path. `lookandfeeltool` / `plasma-apply-lookandfeel`
   must not be used with this package -- they replace the entire global
   theme surface.
+- `showClock`, `showClockOnlyWhenUiVisible`, `showMediaControls` removed
+  from `ThemeUserConfig.qml` / `ThemeConfig.qml`. KDE's screen-locking
+  settings are the single source of truth for these; the old per-theme
+  values were only a fallback for builds where kscreenlocker didn't
+  inject the corresponding `config` keys, which doesn't apply to Plasma
+  6.x. `LockScreenUi.qml` now falls back to literal KDE defaults
+  (`alwaysShowClock: true`, `hideClockWhenIdle: false`,
+  `showMediaControls: true`) on the off chance the keys are missing.
