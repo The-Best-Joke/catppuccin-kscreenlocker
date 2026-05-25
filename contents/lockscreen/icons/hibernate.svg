@@ -3,12 +3,27 @@
   SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
   SPDX-License-Identifier: GPL-2.0-or-later
   Snowflake (hibernate / suspend-to-disk action button).
-  Three rounded bars at 0deg, 60deg, 120deg, each as an independent
-  <rect> with its own rotate() transform. No nested groups; QtSvg has
-  historically been flaky with stacked transforms.
+  Three rounded bars at 0deg, 60deg, 120deg with V-shaped chevron caps
+  at each tip, so the icon reads as a snowflake rather than a plain
+  asterisk. Each cap is a single closed path; each bar + cap pair gets
+  its own rotate() transform (no nested groups; QtSvg has historically
+  been flaky with stacked transforms).
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <rect x="11" y="2" width="2" height="20" rx="1"/>
-  <rect x="11" y="2" width="2" height="20" rx="1" transform="rotate(60 12 12)"/>
-  <rect x="11" y="2" width="2" height="20" rx="1" transform="rotate(120 12 12)"/>
+  <!-- vertical arm -->
+  <rect x="11.25" y="2.5" width="1.5" height="19" rx="0.75"/>
+  <path d="M9.5 5 L12 2.5 L14.5 5 L13.9 5.6 L12 3.7 L10.1 5.6 Z"/>
+  <path d="M9.5 19 L12 21.5 L14.5 19 L13.9 18.4 L12 20.3 L10.1 18.4 Z"/>
+  <!-- arm at 60deg -->
+  <g transform="rotate(60 12 12)">
+    <rect x="11.25" y="2.5" width="1.5" height="19" rx="0.75"/>
+    <path d="M9.5 5 L12 2.5 L14.5 5 L13.9 5.6 L12 3.7 L10.1 5.6 Z"/>
+    <path d="M9.5 19 L12 21.5 L14.5 19 L13.9 18.4 L12 20.3 L10.1 18.4 Z"/>
+  </g>
+  <!-- arm at 120deg -->
+  <g transform="rotate(120 12 12)">
+    <rect x="11.25" y="2.5" width="1.5" height="19" rx="0.75"/>
+    <path d="M9.5 5 L12 2.5 L14.5 5 L13.9 5.6 L12 3.7 L10.1 5.6 Z"/>
+    <path d="M9.5 19 L12 21.5 L14.5 19 L13.9 18.4 L12 20.3 L10.1 18.4 Z"/>
+  </g>
 </svg>
