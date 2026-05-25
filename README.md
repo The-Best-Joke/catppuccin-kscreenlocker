@@ -60,14 +60,8 @@ SPDX-License-Identifier: GPL-2.0-or-later
 	so `sudo` is required. The original is backed up to `lockscreen.bak`
 	on first install.
 
-	> [!CAUTION]
-	> This is a destructive operation: it directly overwrites your
-	> existing kscreenlocker configuration. The original is saved to
-	> `lockscreen.bak` and can be restored with `--uninstall --apply`,
-	> but a misbehaving lockscreen can lock you out of your desktop
-	> until you can SSH or switch to a TTY to recover. **Run
-	> `./install.sh --test` first** to preview the theme in a window
-	> and confirm everything looks right before applying.
+  > [!CAUTION]
+  > This is a destructive operation: it directly overwrites your existing kscreenlocker configuration. The original is saved to `lockscreen.bak` and can be restored with `--uninstall --apply`, but a misbehaving lockscreen can lock you out of your desktop until you can SSH or switch to a TTY to recover. **Run `./install.sh --test` first** to preview the theme in a window and confirm everything looks right before applying.
 
 	```bash
 	./install.sh --apply
