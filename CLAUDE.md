@@ -4,52 +4,122 @@ Guidance for future Claude Code sessions on this repo.
 
 ## What this repo is
 
-A generator for Plasma 6 look-and-feel packages themed to any Catppuccin
-flavor + accent combination. The deliverable is the **kscreenlocker** theme
-under `contents/lockscreen/`. The repo doubles as the development workspace
-and as the source of truth `install.sh` copies from.
+A generator for a Plasma 6 kscreenlocker theme, parameterized by Catppuccin
+flavor + accent. The deliverable is the QML tree under `contents/lockscreen/`,
+plus an `install.sh` that overwrites the system lockscreen directory with that
+tree and a per-(flavor, accent) `CatPalette.qml`.
+
+## How the lockscreen is actually loaded — IMPORTANT
+
+On Plasma 6.x, **kscreenlocker hardcodes the lockscreen path** to the system
+shell package:
+
+```
+/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/
+```
+
+The lock-time greeter (`/usr/libexec/kscreenlocker_greet`) calls
+`m_shellIntegration->defaultShell()`, which returns `org.kde.plasma.desktop`
+and ignores any user override. `KSldApp` never passes `--shell` to the greeter
+in real lock flow — only `--immediateLock`, `--graceTime`, `--nolock`,
+`--ksldfd`. The `--shell` CLI flag is honored solely in `--testing` mode.
+
+Consequences:
+
+- **`[Greeter]Theme=` in `~/.config/kscreenlockerrc` is dead** for the real
+  lock flow on this Plasma version. Setting it does nothing visible.
+- Installing under `~/.local/share/plasma/look-and-feel/` does nothing —
+  kscreenlocker never looks there.
+- Installing under `~/.local/share/plasma/shells/<name>/` does nothing for
+  real locks (it works only with `--testing --shell <name>`).
+- **The only way to theme the real lockscreen is to overwrite the system
+  directory above.** This is what `install.sh --apply` does, with sudo and a
+  one-time `.bak` of the original.
+
+This finding came after burning a session chasing the `[Greeter]Theme=`
+path. Verified by `QT_LOGGING_RULES='qt.qml*=true'` against
+`kscreenlocker_greet --testing`, which showed it loading
+`file:///usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/LockScreen.qml`
+regardless of the configured Theme value. Cross-checked against the
+[Silent-KLockscreen](https://github.com/Khip01/Silent-KLockscreen) installer,
+which targets the same system path for the same reason.
 
 ## Repo location — IMPORTANT
 
 This repo lives at `~/Projects/catppuccin-kscreenlocker/`.
 
-**Never relocate it back under `~/.local/share/plasma/look-and-feel/`.** An
-earlier rev did, and `install.sh`'s `rm -rf "$dest"` happily deleted the
-entire working tree (including `.git`). The current `install.sh` has a
-`realpath` guard that refuses to install over the repo, but the cleanest
-defense is to keep `SCRIPT_DIR` and `DEST_ROOT` on disjoint subtrees.
+**Never relocate it under any path the install script writes to** — the older
+self-deleting bug (when the repo lived under `~/.local/share/plasma/look-and-feel/`)
+was an `rm -rf "$dest"` of a destination that turned out to be the repo's own
+working tree, `.git` included. The current installer's target is
+`/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen`, which
+is on a disjoint subtree, but the principle stands.
 
-## Two-package setup — IMPORTANT
+## Three relevant lockscreen locations
 
-There are **two copies** of the lock screen on this machine:
+| Location | Purpose | Modified by |
+|---|---|---|
+| `~/Projects/catppuccin-kscreenlocker/contents/lockscreen/` | Source / dev tree | hand edits |
+| `~/.local/share/plasma/shells/catppuccin-lockscreen/contents/lockscreen/` | **Testing mirror** — for `--testing --shell catppuccin-lockscreen`. Not in this repo. | `install.sh --test` (auto) |
+| `/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/` | **Real install target** — what locks actually load | `install.sh --apply` (sudo) |
 
-1. **This repo** — the source/dev tree:
-   `~/Projects/catppuccin-kscreenlocker/`
-2. **Shell package** — local testing only, NOT in this repo:
-   `~/.local/share/plasma/shells/catppuccin-lockscreen/`
+### Testing mirror is managed by `install.sh --test`
 
-The shell package exists solely because `kscreenlocker_greet --testing --shell`
-can load it quickly. **It is a mirror.** Every edit to a file under
-`contents/lockscreen/` in this repo MUST be copied to the matching file in the
-shell package, or testing will show stale behavior.
+`install.sh --test` rebuilds the shell-package mirror from the current repo
+state (full file copy + generated `CatPalette.qml` for the chosen flavor +
+accent + a generated `metadata.json` for the shell package) and then launches
+the greeter against it. This is the canonical test workflow; no sudo, no
+system files touched.
 
 ```sh
-REPO=~/Projects/catppuccin-kscreenlocker/contents/lockscreen
-SH=~/.local/share/plasma/shells/catppuccin-lockscreen/contents/lockscreen
-cp "$REPO/<file>" "$SH/<file>"
+./install.sh --test                          # prompts for flavor + accent
+./install.sh --test --flavor mocha --accent peach
 ```
 
-Always mirror after editing. Do not commit the shell package — it is not part
-of this repo.
+The mirror is local-only — never commit it.
+
+If you need to drive the greeter manually (e.g. with `QT_LOGGING_RULES` for
+QML debug output), run `--test` once to sync the mirror, then:
+
+```sh
+QT_LOGGING_RULES='qt.qml*=true' \
+  /usr/libexec/kscreenlocker_greet --testing --shell catppuccin-lockscreen
+```
+
+The greeter does not keep a `.qmlc` cache for this package, so QML edits
+compile fresh each launch.
 
 ## Testing
 
+Preview before applying (user-local mirror, no sudo):
+
 ```sh
-/usr/libexec/kscreenlocker_greet --testing --shell catppuccin-lockscreen
+./install.sh --test
 ```
 
-Run from a terminal to see QML `console.warn` output. The greeter does not
-keep a `.qmlc` cache for this package, so QML edits compile fresh each launch.
+Test the actual installed result (after `install.sh --apply`):
+
+```sh
+/usr/libexec/kscreenlocker_greet --testing
+```
+
+(No `--shell` — falls back to `defaultShell()` = `org.kde.plasma.desktop`,
+which is now your installed theme.)
+
+## install.sh contract
+
+- Install is dry-run by default. Prints every sudo command it would run.
+- `--apply` actually executes the writes (sudo prompts you).
+- First `--apply` per machine backs up the original `lockscreen/` to
+  `lockscreen.bak` (sibling dir, root-owned). Subsequent applies do not
+  overwrite the backup.
+- `--uninstall --apply` restores from `.bak` and keeps the backup in place.
+- `--test` rebuilds the user-local shell mirror and launches the greeter
+  in a window. No sudo, no system files. Use to preview before `--apply`.
+- No `metadata.json` written into the system target — the target is a
+  flat QML directory inside the system shell package, not a standalone
+  KPackage. (`--test` does write a small `metadata.json` into the *mirror*,
+  since that one is a real Plasma/Shell package.)
 
 ## Architecture
 
@@ -100,9 +170,19 @@ keep a `.qmlc` cache for this package, so QML edits compile fresh each launch.
   color scheme, window decoration, plasma theme, icons, cursor, splash —
   and resets anything we don't ship to Breeze defaults. We ship only a
   lock screen, so this command nuked the user's actual Catppuccin color
-  scheme and aurorae window decoration in a prior session. Apply by
-  writing `[Greeter]Theme=` in `kscreenlockerrc` instead. `install.sh`'s
-  `--apply` flag was removed for this reason and the flag now errors out.
+  scheme and aurorae window decoration in a prior session.
+- **Don't suggest `kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme …`.**
+  See "How the lockscreen is actually loaded" above — that key is not
+  consulted at lock time on Plasma 6.x. A previous version of this file
+  recommended it; that advice was wrong.
+- **`install.sh --apply` is the only activation path.** It is destructive
+  (sudo `rm -rf` of `/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen`
+  before copying the new tree) — that's why it's gated behind `--apply` and
+  why a `.bak` is created on first run. Earlier sessions removed an
+  `--apply` flag with different semantics (it shelled out to
+  `lookandfeeltool` and clobbered the user's color scheme). The current
+  `--apply` is unrelated to that and safe in scope — it touches only
+  `…/contents/lockscreen/` and its sibling `.bak`.
 - **No bundled wallpaper.** The earlier wall.png approach overstepped a
   look-and-feel theme's role; the host wallpaper is rendered by
   `WallpaperFader { source: wallpaper }` and that's correct.
@@ -117,14 +197,14 @@ keep a `.qmlc` cache for this package, so QML edits compile fresh each launch.
 
 ## Lost in the catastrophic reinstall (recover if needed)
 
-When this repo was rebuilt after `install.sh`'s `rm -rf` self-deleted the
-prior tree, the following sibling content was not in the shell mirror and
-is currently absent:
+When this repo was rebuilt after the older `install.sh`'s `rm -rf`
+self-deleted the prior tree, the following sibling content was not in the
+shell mirror and is currently absent:
 
 - `contents/defaults/`
 - `contents/previews/` (fullscreenpreview.jpg, preview.png, splash.png)
 - `contents/splash/images/` (busywidget.svg, Logo.png)
 
-These are normal look-and-feel companions but not required for the
-kscreenlocker focus. Add stubs or restore from a Breeze package skeleton if
-Global Theme integration ever needs them.
+These were look-and-feel companions and are not required for the current
+install path (which only consumes `contents/lockscreen/`). Restore from a
+Breeze package skeleton only if Global Theme integration is ever needed.

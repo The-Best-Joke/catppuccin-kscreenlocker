@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
-# Install a Catppuccin lock-screen look-and-feel package into
-# ~/.local/share/plasma/look-and-feel/Catppuccin-{Flavor}-{Accent}/.
+# Install a Catppuccin lockscreen by overwriting the system
+# org.kde.plasma.desktop shell package's lockscreen/ directory. That is
+# the only path kscreenlocker actually loads on Plasma 6.x -- the
+# [Greeter]Theme= key in kscreenlockerrc is dead for the real lock flow.
+# See CLAUDE.md ("How the lockscreen is actually loaded") for the
+# investigation that established this.
+#
+# All destructive operations require --apply. Without it, the script
+# prints the sudo commands it would run instead of running them.
+#
 # Run with --help for options.
 
 set -euo pipefail
@@ -9,12 +17,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 # shellcheck source=palette-data.sh
 source "$SCRIPT_DIR/palette-data.sh"
 
-DEST_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/look-and-feel"
+TARGET="/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen"
+BACKUP="${TARGET}.bak"
+
+# Test mirror -- a user-local Plasma/Shell package the greeter can load
+# in `--testing --shell` mode without touching the system shell. Built
+# on demand by `--test`. Not for distribution, not committed to the repo.
+TEST_SHELL_ID="catppuccin-lockscreen"
+TEST_SHELL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/shells/${TEST_SHELL_ID}"
+GREETER_BIN="/usr/libexec/kscreenlocker_greet"
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--flavor FLAVOR] [--accent ACCENT]
-       $(basename "$0") --uninstall FLAVOR ACCENT
+Usage: $(basename "$0") [--flavor FLAVOR] [--accent ACCENT] [--apply]
+       $(basename "$0") --test [--flavor FLAVOR] [--accent ACCENT]
+       $(basename "$0") --uninstall [--apply]
        $(basename "$0") --list
        $(basename "$0") --help
 
@@ -23,12 +40,22 @@ Accents: ${ACCENTS[*]}
 
 Defaults: --flavor mocha --accent mauve
 
-With no flags, prompts interactively.
+Without --apply this script is a dry run -- it prints the sudo commands
+it would execute. Pass --apply to actually perform the install. You will
+be prompted for your sudo password.
 
-To activate after installing, set the lock-screen theme in
-System Settings -> Workspace -> Screen Locking, or run:
-    kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme \\
-        Catppuccin-{Flavor}-{Accent}
+--test syncs the current repo state + chosen palette into a user-local
+shell package at:
+    $TEST_SHELL_DIR
+and launches the greeter in a window via:
+    $GREETER_BIN --testing --shell $TEST_SHELL_ID
+No sudo, no system files touched. Use to preview before --apply.
+
+Install target: $TARGET
+Backup:         $BACKUP
+
+The original system lockscreen is backed up once on first install. The
+backup is preserved across reinstalls and is restored by --uninstall.
 EOF
 }
 
@@ -63,7 +90,7 @@ write_palette_qml() {
     cat >"$target" <<EOF
 pragma Singleton
 
-import QtQml
+import QtQuick
 
 QtObject {
     readonly property color base:     "$(palette_get "$flavor" base)"
@@ -82,77 +109,139 @@ QtObject {
 EOF
 }
 
-write_metadata_json() {
-    local id="$1" name="$2" src="$3" dest="$4"
-    if command -v python3 >/dev/null 2>&1; then
-        python3 - "$src" "$dest" "$id" "$name" <<'PY'
-import json, sys
-src, dest, new_id, new_name = sys.argv[1:5]
-with open(src) as f:
-    meta = json.load(f)
-meta["KPlugin"]["Id"] = new_id
-meta["KPlugin"]["Name"] = new_name
-with open(dest, "w") as f:
-    json.dump(meta, f, indent=4)
-    f.write("\n")
-PY
+# Run a privileged command, or print it in dry-run mode.
+run_sudo() {
+    if [[ "$APPLY" -eq 1 ]]; then
+        printf '  $ sudo %s\n' "$*"
+        sudo "$@"
     else
-        sed -e "s/\"Id\": \"[^\"]*\"/\"Id\": \"$id\"/" \
-            -e "s/\"Name\": \"[^\"]*\"/\"Name\": \"$name\"/" \
-            "$src" >"$dest"
+        printf '  [dry-run] sudo %s\n' "$*"
     fi
 }
 
-install_variant() {
-    local flavor="$1" accent="$2"
-    local id name dest
-    id="Catppuccin-$(title "$flavor")-$(title "$accent")"
-    name="Catppuccin $(title "$flavor") $(title "$accent")"
-    dest="$DEST_ROOT/$id"
-
-    # Hard refuse if the repo itself sits at the destination path. This
-    # script does `rm -rf "$dest"` and would delete its own source tree.
-    if [[ -d "$dest" ]] && [[ "$(realpath "$SCRIPT_DIR")" == "$(realpath "$dest")" ]]; then
-        printf 'Refusing to install over the repo itself (%s).\n' "$dest" >&2
-        printf 'Move the repo out of %s and rerun.\n' "$DEST_ROOT" >&2
+ensure_target_exists() {
+    if [[ ! -d "$TARGET" ]]; then
+        printf 'Error: %s does not exist.\n' "$TARGET" >&2
+        printf 'Is org.kde.plasma.desktop installed? (package: plasma-workspace)\n' >&2
         exit 1
     fi
-
-    printf 'Installing %s -> %s\n' "$id" "$dest"
-    rm -rf "$dest"
-    mkdir -p "$dest/contents"
-    cp -r "$SCRIPT_DIR/contents/." "$dest/contents/"
-    write_palette_qml "$flavor" "$accent" "$dest/contents/lockscreen/CatPalette.qml"
-    write_metadata_json "$id" "$name" "$SCRIPT_DIR/metadata.json" "$dest/metadata.json"
-
-    printf 'Done.\n'
-    printf 'Apply via System Settings -> Workspace -> Screen Locking -> Theme, or:\n'
-    printf '  kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme %s\n' "$id"
-    printf '  (then lock the screen to load it)\n'
-    printf 'Note: do NOT use lookandfeeltool/plasma-apply-lookandfeel with this\n'
-    printf 'package -- it will reset your color scheme and window decorations\n'
-    printf 'because this package ships only a lock screen, no other components.\n'
 }
 
-uninstall_variant() {
+install_theme() {
     local flavor="$1" accent="$2"
-    contains "$flavor" "${FLAVORS[@]}"  || { printf 'Invalid flavor: %s\n' "$flavor" >&2; exit 1; }
-    contains "$accent" "${ACCENTS[@]}"  || { printf 'Invalid accent: %s\n' "$accent" >&2; exit 1; }
     local id="Catppuccin-$(title "$flavor")-$(title "$accent")"
-    local dest="$DEST_ROOT/$id"
-    if [[ ! -d "$dest" ]]; then
-        printf 'Not installed: %s\n' "$dest" >&2
+
+    ensure_target_exists
+
+    printf 'Installing %s\n' "$id"
+    printf '  source: %s/contents/lockscreen\n' "$SCRIPT_DIR"
+    printf '  target: %s\n' "$TARGET"
+    if [[ "$APPLY" -ne 1 ]]; then
+        printf '\nDRY RUN -- nothing will be written. Re-run with --apply.\n'
+    fi
+    printf '\n'
+
+    local stage
+    stage="$(mktemp -d -t catppuccin-lockscreen.XXXXXX)"
+    # Expand $stage now so the trap survives this function's scope under set -u.
+    # mktemp output has no shell metacharacters, so the literal interpolation is safe.
+    trap "rm -rf -- '$stage'" EXIT
+    cp -r "$SCRIPT_DIR/contents/lockscreen/." "$stage/"
+    write_palette_qml "$flavor" "$accent" "$stage/CatPalette.qml"
+
+    if [[ ! -d "$BACKUP" ]]; then
+        printf 'Backing up original lockscreen:\n'
+        run_sudo cp -rp "$TARGET" "$BACKUP"
+    else
+        printf 'Backup already exists at %s -- not overwriting.\n' "$BACKUP"
+    fi
+
+    printf '\nReplacing %s:\n' "$TARGET"
+    run_sudo rm -rf "$TARGET"
+    run_sudo cp -r "$stage" "$TARGET"
+    run_sudo chmod -R 755 "$TARGET"
+
+    printf '\n'
+    if [[ "$APPLY" -eq 1 ]]; then
+        printf 'Done. Test before locking:\n'
+        printf '    /usr/libexec/kscreenlocker_greet --testing\n'
+        printf 'Then Meta+L for the real lock.\n'
+        printf '\nTo restore the original lockscreen later:\n'
+        printf '    %s --uninstall --apply\n' "$0"
+    else
+        printf 'Dry run complete. Re-run with --apply to perform the install.\n'
+    fi
+}
+
+uninstall_theme() {
+    if [[ ! -d "$BACKUP" ]]; then
+        printf 'No backup found at %s; nothing to restore.\n' "$BACKUP" >&2
         exit 1
     fi
-    if [[ "$(realpath "$SCRIPT_DIR")" == "$(realpath "$dest")" ]]; then
-        printf 'Refusing to uninstall the repo itself (%s).\n' "$dest" >&2
+    ensure_target_exists
+
+    printf 'Restoring original lockscreen\n'
+    printf '  backup: %s\n' "$BACKUP"
+    printf '  target: %s\n' "$TARGET"
+    if [[ "$APPLY" -ne 1 ]]; then
+        printf '\nDRY RUN -- nothing will be written. Re-run with --apply.\n'
+    fi
+    printf '\n'
+
+    run_sudo rm -rf "$TARGET"
+    run_sudo cp -rp "$BACKUP" "$TARGET"
+    run_sudo chmod -R 755 "$TARGET"
+
+    printf '\n'
+    if [[ "$APPLY" -eq 1 ]]; then
+        printf 'Done. Backup retained at %s.\n' "$BACKUP"
+    else
+        printf 'Dry run complete. Re-run with --apply to perform the restore.\n'
+    fi
+}
+
+write_test_shell_metadata() {
+    local target="$1"
+    cat >"$target" <<EOF
+{
+    "KPackageStructure": "Plasma/Shell",
+    "KPlugin": {
+        "Id": "${TEST_SHELL_ID}",
+        "Name": "Catppuccin Lockscreen (test mirror)",
+        "Description": "Local test mirror built by install.sh --test. Not for distribution.",
+        "License": "MIT",
+        "Version": "0.1"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell",
+    "X-Plasma-APIVersion": "2"
+}
+EOF
+}
+
+test_theme() {
+    local flavor="$1" accent="$2"
+    local id="Catppuccin-$(title "$flavor")-$(title "$accent")"
+
+    if [[ ! -x "$GREETER_BIN" ]]; then
+        printf 'Error: greeter binary not found at %s\n' "$GREETER_BIN" >&2
+        printf 'Adjust GREETER_BIN in this script if your distro installs it elsewhere.\n' >&2
         exit 1
     fi
-    printf 'Remove %s? [y/N] ' "$dest"
-    local confirm; read -r confirm
-    [[ "$confirm" == "y" || "$confirm" == "Y" ]] || { printf 'Aborted.\n'; exit 0; }
-    rm -rf "$dest"
-    printf 'Removed.\n'
+
+    printf 'Building test mirror for %s\n' "$id"
+    printf '  mirror: %s\n\n' "$TEST_SHELL_DIR"
+
+    local lockdir="$TEST_SHELL_DIR/contents/lockscreen"
+    mkdir -p "$TEST_SHELL_DIR/contents"
+    rm -rf "$lockdir"
+    cp -r "$SCRIPT_DIR/contents/lockscreen" "$lockdir"
+    write_palette_qml "$flavor" "$accent" "$lockdir/CatPalette.qml"
+    write_test_shell_metadata "$TEST_SHELL_DIR/metadata.json"
+
+    printf 'Launching greeter (close window or unlock to exit):\n'
+    printf '  $ %s --testing --shell %s\n\n' "$GREETER_BIN" "$TEST_SHELL_ID"
+    "$GREETER_BIN" --testing --shell "$TEST_SHELL_ID"
+    printf '\nTest session ended.\n'
 }
 
 list_options() {
@@ -160,24 +249,32 @@ list_options() {
     printf 'Accents: %s\n' "${ACCENTS[*]}"
 }
 
+resolve_flavor_accent() {
+    if [[ -z "$FLAVOR" && -z "$ACCENT" ]]; then
+        FLAVOR="$(prompt_choice 'Flavor' mocha "${FLAVORS[@]}")"
+        ACCENT="$(prompt_choice 'Accent' mauve "${ACCENTS[@]}")"
+    else
+        FLAVOR="${FLAVOR:-mocha}"
+        ACCENT="${ACCENT:-mauve}"
+    fi
+    contains "$FLAVOR" "${FLAVORS[@]}" || { printf 'Invalid flavor: %s\n' "$FLAVOR" >&2; exit 1; }
+    contains "$ACCENT" "${ACCENTS[@]}" || { printf 'Invalid accent: %s\n' "$ACCENT" >&2; exit 1; }
+}
+
 # --- arg parsing ---
 FLAVOR=""
 ACCENT=""
 MODE="install"
-UNINSTALL_FLAVOR=""
-UNINSTALL_ACCENT=""
+APPLY=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --flavor)    FLAVOR="$2"; shift 2 ;;
         --accent)    ACCENT="$2"; shift 2 ;;
-        --apply)     printf 'Error: --apply was removed. Applying via lookandfeeltool resets unrelated\n' >&2
-                     printf 'system theme components (color scheme, window decoration). Set the lock\n' >&2
-                     printf 'screen via System Settings -> Workspace -> Screen Locking, or run:\n' >&2
-                     printf '  kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme Catppuccin-{Flavor}-{Accent}\n' >&2
-                     exit 1 ;;
+        --apply)     APPLY=1; shift ;;
+        --test)      MODE="test"; shift ;;
         --list)      MODE="list"; shift ;;
-        --uninstall) MODE="uninstall"; UNINSTALL_FLAVOR="${2:-}"; UNINSTALL_ACCENT="${3:-}"; shift 3 ;;
+        --uninstall) MODE="uninstall"; shift ;;
         --help|-h)   usage; exit 0 ;;
         *)           printf 'Unknown option: %s\n' "$1" >&2; usage >&2; exit 1 ;;
     esac
@@ -188,18 +285,14 @@ case "$MODE" in
         list_options
         ;;
     uninstall)
-        uninstall_variant "$UNINSTALL_FLAVOR" "$UNINSTALL_ACCENT"
+        uninstall_theme
+        ;;
+    test)
+        resolve_flavor_accent
+        test_theme "$FLAVOR" "$ACCENT"
         ;;
     install)
-        if [[ -z "$FLAVOR" && -z "$ACCENT" ]]; then
-            FLAVOR="$(prompt_choice 'Flavor' mocha "${FLAVORS[@]}")"
-            ACCENT="$(prompt_choice 'Accent' mauve "${ACCENTS[@]}")"
-        else
-            FLAVOR="${FLAVOR:-mocha}"
-            ACCENT="${ACCENT:-mauve}"
-        fi
-        contains "$FLAVOR" "${FLAVORS[@]}" || { printf 'Invalid flavor: %s\n' "$FLAVOR" >&2; exit 1; }
-        contains "$ACCENT" "${ACCENTS[@]}" || { printf 'Invalid accent: %s\n' "$ACCENT" >&2; exit 1; }
-        install_variant "$FLAVOR" "$ACCENT"
+        resolve_flavor_accent
+        install_theme "$FLAVOR" "$ACCENT"
         ;;
 esac
