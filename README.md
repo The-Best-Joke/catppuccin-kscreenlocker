@@ -70,7 +70,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
 	./install.sh --flavor mocha --accent mauve --apply
 	```
 
-5. Lock the screen (`Meta+L`) to see the new theme.
+5. Lock the screen to see the new theme.
 
 To restore the original lockscreen:
 
