@@ -24,6 +24,9 @@ QQC2.Button {
         source: button.iconName
         implicitWidth: Kirigami.Units.iconSizes.smallMedium
         implicitHeight: implicitWidth
+        // Treat the SVG as an alpha mask so the `color` recolor applies
+        // regardless of the SVG's own fill (currentColor, hardcoded, etc).
+        isMask: true
         color: LockScreenLocal.CatPalette.crust
         anchors.centerIn: parent
         visible: button.iconName.length > 0

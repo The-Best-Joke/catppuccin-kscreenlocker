@@ -7,8 +7,12 @@ import QtQml
 import org.kde.kirigami as Kirigami
 
 QtObject {
-    readonly property string suspendIcon: "system-suspend"
-    readonly property string hibernateIcon: "system-suspend-hibernate"
-    readonly property string switchUserIcon: "system-switch-user"
+    // Bundled SVGs (see contents/lockscreen/icons/). Kirigami.Icon renders
+    // these as masks and recolors them via its `color` property, so the
+    // SVGs themselves are monochrome (fill="currentColor").
+    readonly property url suspendIcon: Qt.resolvedUrl("icons/sleep.svg")
+    readonly property url hibernateIcon: Qt.resolvedUrl("icons/hibernate.svg")
+    readonly property url switchUserIcon: Qt.resolvedUrl("icons/switch-user.svg")
+
     readonly property int sectionGap: Math.round(Kirigami.Units.gridUnit / 2)
 }
