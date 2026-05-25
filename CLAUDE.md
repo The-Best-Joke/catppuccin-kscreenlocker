@@ -95,6 +95,14 @@ keep a `.qmlc` cache for this package, so QML edits compile fresh each launch.
 
 ## Hard-won constraints — do not relitigate
 
+- **Never use `lookandfeeltool -a` / `plasma-apply-lookandfeel -a` on this
+  package.** It applies the *entire* look-and-feel surface — global theme,
+  color scheme, window decoration, plasma theme, icons, cursor, splash —
+  and resets anything we don't ship to Breeze defaults. We ship only a
+  lock screen, so this command nuked the user's actual Catppuccin color
+  scheme and aurorae window decoration in a prior session. Apply by
+  writing `[Greeter]Theme=` in `kscreenlockerrc` instead. `install.sh`'s
+  `--apply` flag was removed for this reason and the flag now errors out.
 - **No bundled wallpaper.** The earlier wall.png approach overstepped a
   look-and-feel theme's role; the host wallpaper is rendered by
   `WallpaperFader { source: wallpaper }` and that's correct.

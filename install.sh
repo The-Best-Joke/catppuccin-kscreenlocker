@@ -13,7 +13,7 @@ DEST_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/look-and-feel"
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [--flavor FLAVOR] [--accent ACCENT] [--apply]
+Usage: $(basename "$0") [--flavor FLAVOR] [--accent ACCENT]
        $(basename "$0") --uninstall FLAVOR ACCENT
        $(basename "$0") --list
        $(basename "$0") --help
@@ -24,6 +24,11 @@ Accents: ${ACCENTS[*]}
 Defaults: --flavor mocha --accent mauve
 
 With no flags, prompts interactively.
+
+To activate after installing, set the lock-screen theme in
+System Settings -> Workspace -> Screen Locking, or run:
+    kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme \\
+        Catppuccin-{Flavor}-{Accent}
 EOF
 }
 
@@ -99,7 +104,7 @@ PY
 }
 
 install_variant() {
-    local flavor="$1" accent="$2" apply="$3"
+    local flavor="$1" accent="$2"
     local id name dest
     id="Catppuccin-$(title "$flavor")-$(title "$accent")"
     name="Catppuccin $(title "$flavor") $(title "$accent")"
@@ -121,17 +126,12 @@ install_variant() {
     write_metadata_json "$id" "$name" "$SCRIPT_DIR/metadata.json" "$dest/metadata.json"
 
     printf 'Done.\n'
-    printf 'Apply via System Settings -> Workspace -> Global Theme, or rerun with --apply.\n'
-
-    if [[ "$apply" == "yes" ]]; then
-        if command -v lookandfeeltool >/dev/null 2>&1; then
-            lookandfeeltool -a "$id"
-        elif command -v plasma-apply-lookandfeel >/dev/null 2>&1; then
-            plasma-apply-lookandfeel -a "$id"
-        else
-            printf 'Warning: neither lookandfeeltool nor plasma-apply-lookandfeel found; cannot --apply.\n' >&2
-        fi
-    fi
+    printf 'Apply via System Settings -> Workspace -> Screen Locking -> Theme, or:\n'
+    printf '  kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme %s\n' "$id"
+    printf '  (then lock the screen to load it)\n'
+    printf 'Note: do NOT use lookandfeeltool/plasma-apply-lookandfeel with this\n'
+    printf 'package -- it will reset your color scheme and window decorations\n'
+    printf 'because this package ships only a lock screen, no other components.\n'
 }
 
 uninstall_variant() {
@@ -163,7 +163,6 @@ list_options() {
 # --- arg parsing ---
 FLAVOR=""
 ACCENT=""
-APPLY="no"
 MODE="install"
 UNINSTALL_FLAVOR=""
 UNINSTALL_ACCENT=""
@@ -172,7 +171,11 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --flavor)    FLAVOR="$2"; shift 2 ;;
         --accent)    ACCENT="$2"; shift 2 ;;
-        --apply)     APPLY="yes"; shift ;;
+        --apply)     printf 'Error: --apply was removed. Applying via lookandfeeltool resets unrelated\n' >&2
+                     printf 'system theme components (color scheme, window decoration). Set the lock\n' >&2
+                     printf 'screen via System Settings -> Workspace -> Screen Locking, or run:\n' >&2
+                     printf '  kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme Catppuccin-{Flavor}-{Accent}\n' >&2
+                     exit 1 ;;
         --list)      MODE="list"; shift ;;
         --uninstall) MODE="uninstall"; UNINSTALL_FLAVOR="${2:-}"; UNINSTALL_ACCENT="${3:-}"; shift 3 ;;
         --help|-h)   usage; exit 0 ;;
@@ -197,6 +200,6 @@ case "$MODE" in
         fi
         contains "$FLAVOR" "${FLAVORS[@]}" || { printf 'Invalid flavor: %s\n' "$FLAVOR" >&2; exit 1; }
         contains "$ACCENT" "${ACCENTS[@]}" || { printf 'Invalid accent: %s\n' "$ACCENT" >&2; exit 1; }
-        install_variant "$FLAVOR" "$ACCENT" "$APPLY"
+        install_variant "$FLAVOR" "$ACCENT"
         ;;
 esac

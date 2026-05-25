@@ -9,7 +9,6 @@ The deliverable is the **kscreenlocker** theme under `contents/lockscreen/`. Wal
 ```sh
 ./install.sh                                       # interactive: pick flavor + accent
 ./install.sh --flavor mocha --accent mauve         # non-interactive
-./install.sh --flavor latte --accent lavender --apply
 ./install.sh --list                                # print all flavors and accents
 ./install.sh --uninstall mocha mauve               # remove a variant
 ./install.sh --help
@@ -19,7 +18,15 @@ Each invocation creates `~/.local/share/plasma/look-and-feel/Catppuccin-{Flavor}
 
 ## Apply
 
-After install, switch to the new look-and-feel via **System Settings → Workspace → Global Theme**, or pass `--apply` to the install command (uses `lookandfeeltool` / `plasma-apply-lookandfeel` if available).
+Set the lock-screen theme via **System Settings → Workspace → Screen Locking → Theme** and pick the variant you just installed, or run:
+
+```sh
+kwriteconfig6 --file kscreenlockerrc --group Greeter --key Theme Catppuccin-{Flavor}-{Accent}
+```
+
+then lock the screen to load it.
+
+**Do not use `lookandfeeltool` or `plasma-apply-lookandfeel` to apply this package.** A look-and-feel apply replaces the global theme — including color scheme, window decoration, plasma theme, icons, and cursor — to whatever this package ships (or to Breeze defaults for anything it doesn't ship). This package is lock-screen-only, so applying it that way would reset every other theming surface on your desktop. The install script's earlier `--apply` flag was removed for exactly this reason.
 
 Behavioral toggles — "Show clock" (with the "hide when idle" sub-toggle) and "Show media controls" — are read from **System Settings → Workspace → Screen Locking**. No theme files need editing.
 
