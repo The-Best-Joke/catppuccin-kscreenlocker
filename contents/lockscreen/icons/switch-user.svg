@@ -6,7 +6,7 @@
   Heads as <circle>, bodies as <ellipse>; no complex path math.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-  <circle cx="16.5" cy="7" r="2.5"/>
+  <circle cx="17.5" cy="7" r="2.5"/>
   <ellipse cx="17.5" cy="14" rx="3.5" ry="2.5"/>
   <circle cx="9" cy="8" r="3.5"/>
   <ellipse cx="9" cy="18" rx="6" ry="3.5"/>
