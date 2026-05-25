@@ -162,11 +162,38 @@ ensure_target_exists() {
     fi
 }
 
+# Refuse to operate on anything but Plasma 6.x. The package consumes
+# Plasma 6 QML APIs and overwrites the Plasma-6-specific shell-package
+# lockscreen directory; running this against a Plasma 5 system would
+# at best fail loudly and at worst leave the user with a broken lock
+# screen they can't easily revert without TTY access. Refuse early
+# with a clear message instead.
+ensure_plasma6() {
+    if ! command -v plasmashell >/dev/null 2>&1; then
+        printf 'Error: plasmashell not found. This installer is for KDE Plasma 6.\n' >&2
+        exit 1
+    fi
+    local version
+    version="$(plasmashell --version 2>/dev/null | awk '{print $NF}')"
+    if [[ -z "$version" ]]; then
+        printf 'Error: could not determine Plasma version.\n' >&2
+        printf 'This installer is for KDE Plasma 6 only.\n' >&2
+        exit 1
+    fi
+    if [[ "${version%%.*}" != "6" ]]; then
+        printf 'Error: KDE Plasma 6 is required. Detected Plasma %s.\n' "$version" >&2
+        printf 'Running this installer on Plasma 5 (or earlier) could leave you with\n' >&2
+        printf 'a broken lock screen. Aborting.\n' >&2
+        exit 1
+    fi
+}
+
 install_theme() {
     local flavor="$1" accent="$2"
     local id
     id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
+    ensure_plasma6
     ensure_target_exists
 
     printf 'Installing %s\n' "$id"
@@ -211,6 +238,7 @@ install_theme() {
 }
 
 uninstall_theme() {
+    ensure_plasma6
     if [[ ! -d "$BACKUP" ]]; then
         printf 'No backup found at %s; nothing to restore.\n' "$BACKUP" >&2
         exit 1
@@ -260,6 +288,7 @@ test_theme() {
     local id
     id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
+    ensure_plasma6
     if [[ ! -x "$GREETER_BIN" ]]; then
         printf 'Error: greeter binary not found at %s\n' "$GREETER_BIN" >&2
         printf 'Adjust GREETER_BIN in this script if your distro installs it elsewhere.\n' >&2

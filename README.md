@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
 <h3 align="center">
 	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/logos/exports/1544x1544_circle.png" width="100" alt="Logo"/><br/>
 	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/misc/transparent.png" height="30" width="0px"/>
-	Catppuccin for <a href="https://invent.kde.org/plasma/kscreenlocker">KDE Plasma Lock Screen</a>
+	Catppuccin for <a href="https://invent.kde.org/plasma/kscreenlocker">KDE Plasma 6 Lock Screen</a>
 	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/misc/transparent.png" height="30" width="0px"/>
 </h3>
 
@@ -40,6 +40,15 @@ SPDX-License-Identifier: GPL-2.0-or-later
 </details>
 
 ## Usage
+
+> [!IMPORTANT]
+> **KDE Plasma 6 only.** This theme targets Plasma 6's kscreenlocker
+> (tested on 6.6) and consumes Plasma 6 QML APIs. **Do not run the
+> installer on Plasma 5** — the system path it writes to and the QML
+> it ships are both incompatible, and applying it on Plasma 5 could
+> leave you with a broken lock screen. `install.sh` checks
+> `plasmashell --version` on startup and refuses to proceed on
+> anything other than `6.x`.
 
 1. Ensure you have the [dependencies](#dependencies) for your distribution.
 2. Clone this repository:

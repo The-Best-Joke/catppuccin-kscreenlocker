@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-25
+
+First tagged release. Establishes the install model
+(`install.sh --apply` overwriting the system shell-package lockscreen,
+gated behind `--apply`, with a one-time `.bak` of the original),
+ships per-flavor preview assets, and aligns the repo layout with the
+catppuccin org convention.
+
 ### Changed (breaking)
 
 - **Install path moved from `~/.local/share/plasma/look-and-feel/` to the
@@ -49,8 +57,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   accepts numbers, names, or Enter for the default.
 - `LICENSE` file (GPL-2.0-or-later) and consistent SPDX headers across
   shell scripts and project-authored QML.
-- `CHANGELOG.md`, `CONTRIBUTING.md`, GitHub Actions `shellcheck`
-  workflow.
+- `CHANGELOG.md`, GitHub Actions `shellcheck` workflow, `SECURITY.md`
+  (modelled on the catppuccin org SECURITY policy).
+- `justfile` exposing common dev tasks (`just test`, `just install`,
+  `just lint`, `just clean`, etc.).
+- Plasma-6 guard: `install.sh` calls `plasmashell --version` on
+  startup for `--apply`, `--test`, and `--uninstall` and refuses to
+  proceed if it isn't Plasma 6.x. Prevents bricking a Plasma 5
+  install.
+- Per-flavor preview screenshots under `assets/` + four-flavor hero
+  (`assets/preview.webp`), referenced by the README.
 
 ### Fixed
 
