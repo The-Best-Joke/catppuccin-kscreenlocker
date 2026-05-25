@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `LICENSE` file (GPL-2.0-or-later) and consistent SPDX headers across
   shell scripts and project-authored QML.
 - `CHANGELOG.md`, `CONTRIBUTING.md`, GitHub Actions `shellcheck`
-  workflow, `scripts/capture-screenshots.sh` helper.
+  workflow.
 
 ### Fixed
 

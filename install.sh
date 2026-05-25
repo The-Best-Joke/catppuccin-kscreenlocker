@@ -55,6 +55,9 @@ shell package at:
 and launches the greeter in a window via:
     $GREETER_BIN --testing --shell $TEST_SHELL_ID
 No sudo, no system files touched. Use to preview before --apply.
+Wallpaper, username, avatar, etc. are whatever your current Plasma /
+KDE configuration provides; edit ThemeUserConfig.qml or your screen
+locking settings to change them.
 
 Install target: $TARGET
 Backup:         $BACKUP
@@ -273,12 +276,6 @@ test_theme() {
     write_palette_qml "$flavor" "$accent" "$lockdir/CatPalette.qml"
     write_test_shell_metadata "$TEST_SHELL_DIR/metadata.json"
 
-    if [[ "$NO_LAUNCH" -eq 1 ]]; then
-        printf 'Mirror built. Launch the greeter manually:\n'
-        printf '  $ %s --testing --shell %s\n' "$GREETER_BIN" "$TEST_SHELL_ID"
-        return
-    fi
-
     printf 'Launching greeter (close window or unlock to exit):\n'
     printf '  $ %s --testing --shell %s\n\n' "$GREETER_BIN" "$TEST_SHELL_ID"
     "$GREETER_BIN" --testing --shell "$TEST_SHELL_ID"
@@ -307,7 +304,6 @@ FLAVOR=""
 ACCENT=""
 MODE="install"
 APPLY=0
-NO_LAUNCH=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -315,7 +311,6 @@ while [[ $# -gt 0 ]]; do
         --accent)    ACCENT="$2"; shift 2 ;;
         --apply)     APPLY=1; shift ;;
         --test)      MODE="test"; shift ;;
-        --no-launch) NO_LAUNCH=1; shift ;;
         --list)      MODE="list"; shift ;;
         --uninstall) MODE="uninstall"; shift ;;
         --version|-V) printf 'catppuccin-kscreenlocker installer %s\n' "$VERSION"; exit 0 ;;

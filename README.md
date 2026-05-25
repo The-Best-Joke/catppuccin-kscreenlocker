@@ -24,19 +24,19 @@ SPDX-License-Identifier: GPL-2.0-or-later
 
 <details>
 	<summary>🌻 Latte</summary>
-	<img src="assets/latte.png"/>
+	<img src="assets/latte.webp"/>
 </details>
 <details>
 	<summary>🪴 Frappé</summary>
-	<img src="assets/frappe.png"/>
+	<img src="assets/frappe.webp"/>
 </details>
 <details>
 	<summary>🌺 Macchiato</summary>
-	<img src="assets/macchiato.png"/>
+	<img src="assets/macchiato.webp"/>
 </details>
 <details>
 	<summary>🌿 Mocha</summary>
-	<img src="assets/mocha.png"/>
+	<img src="assets/mocha.webp"/>
 </details>
 
 ## Usage
