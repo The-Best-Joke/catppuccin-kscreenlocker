@@ -3,165 +3,154 @@ SPDX-FileCopyrightText: 2025 Alejandro Salazar <alejandro.s@berkeley.edu>
 SPDX-License-Identifier: GPL-2.0-or-later
 -->
 
-# Catppuccin kscreenlocker
+<h3 align="center">
+	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/logos/exports/1544x1544_circle.png" width="100" alt="Logo"/><br/>
+	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/misc/transparent.png" height="30" width="0px"/>
+	Catppuccin for <a href="https://invent.kde.org/plasma/kscreenlocker">KDE Plasma Lock Screen</a>
+	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/misc/transparent.png" height="30" width="0px"/>
+</h3>
 
-A [Catppuccin](https://catppuccin.com/)-themed lock screen for **KDE Plasma 6**.
-Pick any of the four flavors (Latte, Frappé, Macchiato, Mocha) paired with any
-of the fourteen accent colors; the installer generates the palette and replaces
-the system lockscreen QML in place.
+<p align="center">
+	<a href="https://github.com/The-Best-Joke/catppuccin-kscreenlocker/stargazers"><img src="https://img.shields.io/github/stars/The-Best-Joke/catppuccin-kscreenlocker?colorA=363a4f&colorB=b7bdf8&style=for-the-badge"></a>
+	<a href="https://github.com/The-Best-Joke/catppuccin-kscreenlocker/issues"><img src="https://img.shields.io/github/issues/The-Best-Joke/catppuccin-kscreenlocker?colorA=363a4f&colorB=f5a97f&style=for-the-badge"></a>
+	<a href="https://github.com/The-Best-Joke/catppuccin-kscreenlocker/contributors"><img src="https://img.shields.io/github/contributors/The-Best-Joke/catppuccin-kscreenlocker?colorA=363a4f&colorB=a6da95&style=for-the-badge"></a>
+</p>
 
-## Screenshots
+<p align="center">
+	<img src="assets/preview.png"/>
+</p>
 
-> Generated with `scripts/capture-screenshots.sh` (see [Screenshots](#screenshot-helper) below).
+## Previews
 
-| Latte | Frappé | Macchiato | Mocha |
-|---|---|---|---|
-| ![latte-mauve](docs/screenshots/latte-mauve.png) | ![frappe-mauve](docs/screenshots/frappe-mauve.png) | ![macchiato-mauve](docs/screenshots/macchiato-mauve.png) | ![mocha-mauve](docs/screenshots/mocha-mauve.png) |
+<details>
+	<summary>🌻 Latte</summary>
+	<img src="assets/latte.png"/>
+</details>
+<details>
+	<summary>🪴 Frappé</summary>
+	<img src="assets/frappe.png"/>
+</details>
+<details>
+	<summary>🌺 Macchiato</summary>
+	<img src="assets/macchiato.png"/>
+</details>
+<details>
+	<summary>🌿 Mocha</summary>
+	<img src="assets/mocha.png"/>
+</details>
 
-## Requirements
+## Usage
 
-- KDE Plasma 6.x (tested on 6.6).
-- A Wayland session (the install path is Plasma-6-Wayland-specific; X11 may
-  work but is not tested).
-- `sudo` rights — the installer overwrites a system directory.
-- Recommended: [JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/releases) for the intended typography (see [Fonts](#fonts) below).
+1. Ensure you have the [dependencies](#dependencies) for your distribution.
+2. Clone this repository:
 
-## Install
+	```bash
+	git clone https://github.com/The-Best-Joke/catppuccin-kscreenlocker.git
+	cd catppuccin-kscreenlocker
+	```
 
-```sh
-# Preview in a window first (no sudo, no system files touched):
-./install.sh --test
+3. (Optional) Preview a flavour + accent in a window before touching the system:
 
-# Once happy, install for real (prompts for sudo; backs up the original lockscreen):
-./install.sh --apply
+	```bash
+	./install.sh --test
+	```
+
+4. Install. This overwrites the system lockscreen at
+	`/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/`,
+	so `sudo` is required. The original is backed up to `lockscreen.bak`
+	on first install.
+
+	```bash
+	./install.sh --apply
+	```
+
+	Or non-interactively:
+
+	```bash
+	./install.sh --flavor mocha --accent mauve --apply
+	```
+
+5. Lock the screen (`Meta+L`) to see the new theme.
+
+To restore the original lockscreen:
+
+```bash
+./install.sh --uninstall --apply
 ```
 
-The installer is a **dry run by default** — any invocation without `--apply`
-just prints the `sudo` commands it would run. Pass `--apply` to actually
-execute them.
+> Do **not** apply this package with `lookandfeeltool` / `plasma-apply-lookandfeel`.
+> Those tools replace your entire global theme (colour scheme, window
+> decoration, icons, cursor, splash) with whatever the package ships. We
+> ship only a lock screen, so doing so would reset every other theming
+> surface on your desktop. The `install.sh --apply` path above is the
+> correct install method.
 
-All commands:
+## Dependencies
 
-```sh
-./install.sh                                        # interactive dry-run
-./install.sh --flavor mocha --accent mauve          # non-interactive dry-run
-./install.sh --flavor mocha --accent mauve --apply  # actual install
-./install.sh --test                                 # preview in a window
-./install.sh --uninstall --apply                    # restore the original
-./install.sh --list                                 # list flavors and accents
-./install.sh --version                              # print installer version
-./install.sh --help
+### Arch Based OS
+
+```bash
+pacman -Syu plasma-workspace kscreenlocker qt6-svg qt6-declarative
 ```
 
-### What the installer does
+### Debian / Ubuntu
 
-1. Backs up the system lockscreen to a sibling `.bak` directory (once,
-   on the first apply; never overwritten by subsequent applies).
-2. Writes the chosen flavor's palette into a `CatPalette.qml` singleton.
-3. Replaces
-   `/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/`
-   with the themed QML tree.
-4. Sets permissions to 755.
+```bash
+apt install plasma-workspace kscreenlocker libqt6svg6 qml6-module-org-kde-kirigami-platform
+```
 
-`--uninstall --apply` restores from `.bak`. The backup is preserved.
+### Fedora / RPM Based OS
 
-### Why sudo?
+```bash
+dnf install plasma-workspace kscreenlocker qt6-qtsvg qt6-qtdeclarative
+```
 
-Plasma 6 kscreenlocker hardcodes the lockscreen path to the system
-`org.kde.plasma.desktop` shell package; it does not consult the
-`[Greeter]Theme=` key in `kscreenlockerrc` and does not look in
-user-local Plasma directories. Themeing the lockscreen therefore
-requires overwriting that one system directory. See
-[`CONTRIBUTING.md`](CONTRIBUTING.md) for the longer explanation
-and the upstream source references that establish this.
+### Solus OS
+
+```bash
+eopkg install plasma-workspace kscreenlocker qt6-svg qt6-declarative
+```
+
+### NixOS
+
+This theme is not yet packaged in nixpkgs. Install manually with
+`./install.sh --apply` on a Plasma 6 system, or contribute a package.
 
 ## Configuration
 
-### Behavioral toggles (System Settings)
+KDE's built-in screen-locking settings drive the "show clock" and "show
+media controls" toggles. Adjust them under **System Settings → Workspace
+→ Screen Locking**.
 
-These are read from KDE's screen-locking settings; no theme files to edit:
+Everything else lives in `contents/lockscreen/ThemeUserConfig.qml`:
 
-- Show clock (with the "hide when idle" sub-toggle).
-- Show media controls.
+- `fontFamily`: Font family for all lockscreen text. Empty string (`""`)
+	uses the Plasma system font. For the intended look, install
+	[JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/releases)
+	and set this to `"JetBrainsMono Nerd Font"`. Any installed family name works.
+- `showLayoutLabel`: Show the keyboard-layout label (only appears with
+	more than one configured layout). `true` or `false`.
+- `showUserImage`: Show the user's avatar image. `true` or `false`.
 
-Find them under **System Settings → Workspace → Screen Locking**.
+Edit the file in your clone and re-run `./install.sh --apply` to push
+changes through. Editing the installed copy under `/usr/share/...`
+directly works but requires `sudo` and is overwritten on the next install.
 
-### Per-theme overrides (`ThemeUserConfig.qml`)
+## 💝 Thanks to
 
-Everything else — font, layout-label visibility, user-image visibility —
-lives in `ThemeUserConfig.qml`:
+- [Alejandro Salazar](https://github.com/The-Best-Joke)
+- Anthropic's [Claude](https://www.anthropic.com/claude) — collaborator on the installer and the underlying kscreenlocker investigation
 
-```qml
-QtObject {
-    property string fontFamily: ""        // "" = system default
-    property bool   showLayoutLabel: false // shown only with >1 keyboard layout
-    property bool   showUserImage: true
-}
-```
+&nbsp;
 
-To change a value, edit the file in this repo and re-run
-`./install.sh --apply`. (You can also `sudo $EDITOR
-/usr/share/plasma/shells/org.kde.plasma.desktop/contents/lockscreen/ThemeUserConfig.qml`
-directly, but those edits are clobbered on the next install.)
+<p align="center">
+	<img src="https://raw.githubusercontent.com/catppuccin/catppuccin/main/assets/footers/gray0_ctp_on_line.svg?sanitize=true" />
+</p>
 
-### Fonts
+<p align="center">
+	Copyright &copy; 2025-present <a href="https://github.com/The-Best-Joke" target="_blank">Alejandro Salazar</a>
+</p>
 
-The default is the system font (empty string in `ThemeUserConfig.qml`).
-For the intended look, install **[JetBrains Mono Nerd Font](https://github.com/ryanoasis/nerd-fonts/releases)** and set:
-
-```qml
-property string fontFamily: "JetBrainsMono Nerd Font"
-```
-
-Any installed font family name works. If you set a font that isn't
-installed, Qt silently substitutes — there's no visible warning. Empty
-string is the safest default.
-
-## How it looks
-
-The palette comes from a single QML singleton, `CatPalette.qml`, written
-by the installer per (flavor, accent):
-
-- **Eight neutrals** from the Catppuccin spec: `base`, `mantle`, `crust`,
-  `surface0`, `surface1`, `overlay0`, `subtext0`, `text`.
-- **One accent** — the unlock button + selected-user halo.
-- **Semantic `red`** — auth-failure border, sleep/hibernate/switch-user
-  action buttons. (These stay Catppuccin red across all accents; they
-  read as power-related danger affordances regardless of the rest of the
-  theme.)
-- **`rosewater`** — action-button hover.
-
-Derived shades (hover, active, alpha-tinted variants) are computed at
-the call site via `Qt.lighter`, `Qt.darker`, `Qt.rgba(c.r, c.g, c.b, a)`
-— no per-accent branching, every accent ramps correctly.
-
-## Local development
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the testing workflow,
-code style, and the constraints that came out of the wider
-investigation (no `lookandfeeltool`, no INI files, no
-`[Greeter]Theme=` writes — explained in detail there).
-
-Short version: edit anything under `contents/lockscreen/`, run
-`./install.sh --test` to preview without touching the system.
-
-### Screenshot helper
-
-```sh
-scripts/capture-screenshots.sh              # one shot per flavor (with mauve)
-scripts/capture-screenshots.sh --accents    # mocha with every accent
-scripts/capture-screenshots.sh --all        # 4 flavors x 14 accents = 56 shots
-scripts/capture-screenshots.sh mocha:peach latte:teal
-```
-
-Outputs to `docs/screenshots/<flavor>-<accent>.png`. Requires
-`spectacle` and a running Wayland Plasma session; greeter windows pop
-briefly during capture, so don't run it while you're using the desktop.
-
-## License
-
-GPL-2.0-or-later. See [`LICENSE`](LICENSE).
-
-QML files inherited from upstream KDE Plasma retain their original
-copyright notices and SPDX headers; project-authored files carry the
-project's own SPDX headers.
+<p align="center">
+	<a href="LICENSE"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=GPL--2.0--or--later&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
+</p>

@@ -13,9 +13,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
-OUT_DIR="${REPO_DIR}/docs/screenshots"
+OUT_DIR="${REPO_DIR}/assets"
 GREETER_BIN="/usr/libexec/kscreenlocker_greet"
 TEST_SHELL_ID="catppuccin-lockscreen"
+
+# When a captured shot uses the project's "default" accent (mauve), the
+# output is named after the flavor only (latte.png, mocha.png, ...) so
+# the README can reference catppuccin-style asset paths. Otherwise the
+# output is <flavor>-<accent>.png. Set HERO=1 to also write preview.png.
+DEFAULT_ACCENT="mauve"
+HERO_SOURCE="mocha:mauve"
 
 # shellcheck source=../palette-data.sh
 source "$REPO_DIR/palette-data.sh"
@@ -35,7 +42,10 @@ Usage: $(basename "$0") [flavor:accent ...]
        $(basename "$0") --flavors          # one shot per flavor (default)
        $(basename "$0") --accents          # one shot per accent (on mocha)
 
-Output: ${OUT_DIR}/<flavor>-<accent>.png
+Output:
+    ${OUT_DIR}/<flavor>.png            (when accent == $DEFAULT_ACCENT)
+    ${OUT_DIR}/<flavor>-<accent>.png   (otherwise)
+    ${OUT_DIR}/preview.png             (copy of $HERO_SOURCE shot, used as the README hero)
 
 Requires: Wayland Plasma session, spectacle in PATH, and that the
 greeter binary at ${GREETER_BIN} exists.
@@ -63,7 +73,12 @@ require_tools() {
 
 capture_one() {
     local flavor="$1" accent="$2"
-    local out="${OUT_DIR}/${flavor}-${accent}.png"
+    local out
+    if [[ "$accent" == "$DEFAULT_ACCENT" ]]; then
+        out="${OUT_DIR}/${flavor}.png"
+    else
+        out="${OUT_DIR}/${flavor}-${accent}.png"
+    fi
 
     printf '[*] %-10s %s\n' "$flavor" "$accent"
     "$REPO_DIR/install.sh" --test --no-launch \
@@ -82,11 +97,18 @@ capture_one() {
     wait "$greeter_pid" 2>/dev/null || true
     sleep 0.4
 
-    if [[ -s "$out" ]]; then
-        printf '    -> %s\n' "$out"
-    else
+    if [[ ! -s "$out" ]]; then
         printf '    !! capture failed for %s/%s\n' "$flavor" "$accent" >&2
         return 1
+    fi
+
+    printf '    -> %s\n' "$out"
+
+    # Mirror the hero shot to preview.png so the README's preview slot
+    # is populated without an extra capture pass.
+    if [[ "${flavor}:${accent}" == "$HERO_SOURCE" ]]; then
+        cp -f "$out" "${OUT_DIR}/preview.png"
+        printf '    -> %s (hero)\n' "${OUT_DIR}/preview.png"
     fi
 }
 
