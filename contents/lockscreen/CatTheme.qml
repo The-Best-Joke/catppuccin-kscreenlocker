@@ -10,7 +10,7 @@ QtObject {
     // Bundled SVGs (see contents/lockscreen/icons/). Kirigami.Icon renders
     // these as masks and recolors them via its `color` property, so the
     // SVGs themselves are monochrome (fill="currentColor").
-    readonly property url suspendIcon: Qt.resolvedUrl("icons/sleep.svg")
+    readonly property url suspendIcon: Qt.resolvedUrl("icons/moon.svg")
     readonly property url hibernateIcon: Qt.resolvedUrl("icons/hibernate.svg")
     readonly property url switchUserIcon: Qt.resolvedUrl("icons/switch-user.svg")
 
