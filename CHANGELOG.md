@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   properties and their `suspendToRam()` / `suspendToDisk()` signals are
   dropped from `LockScreen.qml`; `viewVisible` stays, since the greeter
   still writes it.
+- **Screen Locking settings reach the lockscreen again.** The install
+  replaced the target directory wholesale, dropping the `config.xml` that
+  kscreenlocker reads (`shell_integration.cpp`, via `KConfigLoader` →
+  `KConfigPropertyMap`) to build the QML `config` object. Without it the
+  "show clock" / "hide clock when idle" / "show media controls" toggles
+  silently did nothing, and Plasma's own `WallpaperFader` lost its
+  `config.alwaysShowClock` input. `install.sh` now carries the host's
+  `config.xml` and `config.qml` into both the installed tree and the
+  `--test` mirror, sourced from the pristine `.bak` when one exists.
 
 ## [0.3.0] - 2026-05-25
 
