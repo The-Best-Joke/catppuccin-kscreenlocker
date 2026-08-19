@@ -144,6 +144,41 @@ QtObject {
 EOF
 }
 
+# The greeter builds the QML `config` context property from the shell
+# package's own lockscreen/config.xml -- see kscreenlocker
+# settings/shell_integration.cpp:
+#     m_package.filePath("lockscreen", "config.xml")
+# That schema is what makes System Settings -> Screen Locking toggles
+# (alwaysShowClock, hideClockWhenIdle, showMediaControls) reach the QML,
+# and the system's own WallpaperFader.qml reads config.alwaysShowClock
+# too. It is distro/version-specific, so we don't vendor it -- we carry
+# the host's copy across the install instead. config.qml is its matching
+# System Settings config page; it belongs with the schema.
+#
+# Source of truth is the pristine backup when we have one, otherwise the
+# current target (still pristine on a first install).
+HOST_CONFIG_FILES=(config.xml config.qml)
+
+harvest_host_config() {
+    local dest="$1"
+    local src="$TARGET"
+    [[ -d "$BACKUP" ]] && src="$BACKUP"
+
+    local f found=0
+    for f in "${HOST_CONFIG_FILES[@]}"; do
+        if [[ -r "$src/$f" ]]; then
+            cp "$src/$f" "$dest/$f"
+            printf '  carrying over %s (from %s)\n' "$f" "$src"
+            found=1
+        fi
+    done
+    if [[ "$found" -eq 0 ]]; then
+        printf 'Warning: no config.xml found under %s.\n' "$src" >&2
+        printf '  Screen Locking settings (clock, media controls) will fall back to\n' >&2
+        printf '  the defaults in ThemeUserConfig.qml.\n' >&2
+    fi
+}
+
 # Run a privileged command, or print it in dry-run mode.
 run_sudo() {
     if [[ "$APPLY" -eq 1 ]]; then
@@ -212,6 +247,8 @@ install_theme() {
     trap "rm -rf -- '$stage'" EXIT
     cp -r "$SCRIPT_DIR/contents/lockscreen/." "$stage/"
     write_palette_qml "$flavor" "$accent" "$stage/CatPalette.qml"
+    harvest_host_config "$stage"
+    printf '\n'
 
     if [[ ! -d "$BACKUP" ]]; then
         printf 'Backing up original lockscreen:\n'
@@ -304,6 +341,8 @@ test_theme() {
     cp -r "$SCRIPT_DIR/contents/lockscreen" "$lockdir"
     write_palette_qml "$flavor" "$accent" "$lockdir/CatPalette.qml"
     write_test_shell_metadata "$TEST_SHELL_DIR/metadata.json"
+    harvest_host_config "$lockdir"
+    printf '\n'
 
     printf 'Launching greeter (close window or unlock to exit):\n'
     printf '  $ %s --testing --shell %s\n\n' "$GREETER_BIN" "$TEST_SHELL_ID"

@@ -350,15 +350,15 @@ Item {
                         text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Slee&p")
                         iconName: LockScreenLocal.CatTheme.suspendIcon
                         controlSize: 36
-                        onClicked: root.suspendToRam()
-                        visible: root.suspendToRamSupported
+                        onClicked: sessionManagement.suspend()
+                        visible: sessionManagement.canSuspend
                     },
                     LockScreenLocal.CatActionButton {
                         text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "&Hibernate")
                         iconName: LockScreenLocal.CatTheme.hibernateIcon
                         controlSize: 36
-                        onClicked: root.suspendToDisk()
-                        visible: root.suspendToDiskSupported
+                        onClicked: sessionManagement.hibernate()
+                        visible: sessionManagement.canHibernate
                     },
                     LockScreenLocal.CatActionButton {
                         text: i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button", "Switch &User")

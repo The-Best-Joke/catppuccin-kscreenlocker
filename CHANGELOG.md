@@ -12,6 +12,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Sleep and Hibernate buttons now appear.** They were bound to the
+  `root.suspendToRamSupported` / `root.suspendToDiskSupported` properties
+  inherited from Breeze, which kscreenlocker stopped setting in v6.6.90
+  (commit 9e622c8, "Drop custom session management code") — leaving both
+  bindings permanently `false`, so only Switch User rendered. They now use
+  `sessionManagement.canSuspend` / `canHibernate` and call
+  `sessionManagement.suspend()` / `hibernate()`, matching the upstream
+  plasma-desktop fix and the mechanism Switch User already used. The dead
+  properties and their `suspendToRam()` / `suspendToDisk()` signals are
+  dropped from `LockScreen.qml`; `viewVisible` stays, since the greeter
+  still writes it.
+- **Screen Locking settings reach the lockscreen again.** The install
+  replaced the target directory wholesale, dropping the `config.xml` that
+  kscreenlocker reads (`shell_integration.cpp`, via `KConfigLoader` →
+  `KConfigPropertyMap`) to build the QML `config` object. Without it the
+  "show clock" / "hide clock when idle" / "show media controls" toggles
+  silently did nothing, and Plasma's own `WallpaperFader` lost its
+  `config.alwaysShowClock` input. `install.sh` now carries the host's
+  `config.xml` and `config.qml` into both the installed tree and the
+  `--test` mirror, sourced from the pristine `.bak` when one exists.
+
 ## [0.3.0] - 2026-05-25
 
 First tagged release. Establishes the install model
