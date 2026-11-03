@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Loads on Plasma 6.8 again.** 6.8 removed
+  `org.kde.breeze.components.VirtualKeyboardLoader`, so `LockScreenUi.qml`
+  failed to compile (`VirtualKeyboardLoader is not a type`) and the greeter
+  fell back to its built-in locker. Rebased `LockScreenUi.qml` and
+  `MainBlock.qml` onto the 6.8.2 upstream files, picking up the new auth
+  flow: the `ScreenLocker.AuthenticatorModel` method picker (shown only when
+  more than one authenticator exists), the `startAuthenticating()` heartbeat
+  and `stopAuthenticating()` on success, `pamTimeout` password queuing,
+  `ActiveScreenMonitor` in place of `onExited`, and
+  `KWinVirtualKeyboard` in place of the removed loader. The grace-lock
+  timer and `authenticator.graceLocked` checks are gone, as upstream.
+  `SessionManagementScreen.qml` gains the matching `authenticationTypeItem`
+  slot. The advisory label now also reports Slow Keys.
 - **Sleep and Hibernate buttons now appear.** They were bound to the
   `root.suspendToRamSupported` / `root.suspendToDiskSupported` properties
   inherited from Breeze, which kscreenlocker stopped setting in v6.6.90

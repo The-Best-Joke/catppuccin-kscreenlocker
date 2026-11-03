@@ -22,6 +22,7 @@ LockScreenLocal.SessionManagementScreen {
 
     readonly property color catSubtext0: LockScreenLocal.CatPalette.subtext0
 
+    property alias passwordInputVisible: passwordLayout.visible
     readonly property alias mainPasswordBox: passwordBox
     property bool lockScreenUiVisible: false
     property alias showPassword: passwordBox.showPassword
@@ -57,6 +58,7 @@ LockScreenLocal.SessionManagementScreen {
     }
 
     ColumnLayout {
+        id: passwordLayout
         Layout.alignment: Qt.AlignHCenter
         Layout.minimumWidth: 260
         Layout.preferredWidth: 260
@@ -79,7 +81,6 @@ LockScreenLocal.SessionManagementScreen {
 
             placeholderText: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:placeholder in text field", "Password")
             focus: true
-            enabled: !authenticator.graceLocked
 
             // In Qt this is implicitly active based on focus rather than visibility
             // in any other application having a focussed invisible object would be weird
@@ -133,7 +134,7 @@ LockScreenLocal.SessionManagementScreen {
             Layout.maximumHeight: 36
             controlWidth: 260
             controlHeight: 36
-            enabled: passwordBox.text.length > 0 && !authenticator.graceLocked
+            enabled: passwordBox.text.length > 0
 
             onClicked: sessionManager.startLogin()
             Keys.onEnterPressed: clicked()
