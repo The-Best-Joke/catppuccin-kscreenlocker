@@ -12,12 +12,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Changed
+## [0.4.0] - 2026-11-03
+
+Ports the lockscreen to Plasma 6.8, whose lockscreen QML API changes
+made the 0.3.0 theme fail to load (the greeter fell back to its
+built-in locker), and makes the installer cope with distro updates
+reinstalling the stock lockscreen over the theme. Plasma 6.8 is now the
+minimum supported release.
+
+### Changed (breaking)
 
 - **Requires Plasma 6.8 or newer.** The 6.8 port uses lockscreen QML APIs
   that older releases lack, so `install.sh` now refuses `--apply` and
   `--test` below 6.8 instead of installing a lockscreen that would fall
   back to the built-in locker. `--uninstall` still only requires 6.x.
+
+### Changed
+
 - **Documented re-applying after Plasma updates.** The README explains
   that each `plasma-desktop` update restores the stock lockscreen and how
   to re-apply; `install.sh --help` says the same and describes the backup

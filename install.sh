@@ -33,7 +33,7 @@ TEST_SHELL_ID="catppuccin-lockscreen"
 TEST_SHELL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/shells/${TEST_SHELL_ID}"
 GREETER_BIN="/usr/libexec/kscreenlocker_greet"
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 
 # Oldest Plasma whose lockscreen QML APIs the theme uses. 6.8 added
 # ScreenLocker.AuthenticatorModel / ActiveScreenMonitor and replaced
