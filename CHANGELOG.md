@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Requires Plasma 6.8 or newer.** The 6.8 port uses lockscreen QML APIs
+  that older releases lack, so `install.sh` now refuses `--apply` and
+  `--test` below 6.8 instead of installing a lockscreen that would fall
+  back to the built-in locker. `--uninstall` still only requires 6.x.
+- **Documented re-applying after Plasma updates.** The README explains
+  that each `plasma-desktop` update restores the stock lockscreen and how
+  to re-apply; `install.sh --help` says the same and describes the backup
+  refresh. Dropped the header's reference to a nonexistent
+  `CONTRIBUTING.md`.
+
 ### Fixed
 
 - **Loads on Plasma 6.8 again.** 6.8 removed
