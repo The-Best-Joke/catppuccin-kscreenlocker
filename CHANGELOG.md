@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   timer and `authenticator.graceLocked` checks are gone, as upstream.
   `SessionManagementScreen.qml` gains the matching `authenticationTypeItem`
   slot. The advisory label now also reports Slow Keys.
+- **Survives distro updates reinstalling the stock lockscreen.** A package
+  update (e.g. Fedora's `plasma-desktop` RPM) rewrites every file it owns
+  in the target, which left the old `.bak` holding an older Plasma
+  release's QML that `--uninstall` would restore onto the new one. When
+  `--apply` finds upstream files in the target, it now re-snapshots
+  `.bak` from them (minus our own leftover files) and harvests
+  `config.xml` / `config.qml` from them rather than from the stale backup.
+
 - **Sleep and Hibernate buttons now appear.** They were bound to the
   `root.suspendToRamSupported` / `root.suspendToDiskSupported` properties
   inherited from Breeze, which kscreenlocker stopped setting in v6.6.90
