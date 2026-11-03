@@ -5,8 +5,12 @@
 # Install a Catppuccin lockscreen by overwriting the system
 # org.kde.plasma.desktop shell package's lockscreen/ directory. That is
 # the only path kscreenlocker actually loads on Plasma 6.x -- the
-# [Greeter]Theme= key in kscreenlockerrc is not consulted at lock time.
-# See CONTRIBUTING.md ("How install actually works") for context.
+# [Greeter]Theme= key in kscreenlockerrc is not consulted at lock time
+# (kscreenlocker_greet only honors --shell in --testing mode).
+#
+# That directory belongs to the distro's plasma-desktop package, so every
+# Plasma update reinstalls the stock files over this theme; re-run with
+# --apply afterwards.
 #
 # All destructive operations require --apply. Without it, the script
 # prints the sudo commands it would run instead of running them.
@@ -30,6 +34,15 @@ TEST_SHELL_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/plasma/shells/${TEST_SHELL_
 GREETER_BIN="/usr/libexec/kscreenlocker_greet"
 
 VERSION="0.3.0"
+
+# Oldest Plasma whose lockscreen QML APIs the theme uses. 6.8 added
+# ScreenLocker.AuthenticatorModel / ActiveScreenMonitor and replaced
+# breeze's VirtualKeyboardLoader with KWinVirtualKeyboard; on older
+# releases LockScreenUi.qml fails to load and the greeter falls back to
+# its built-in locker.
+MIN_PLASMA_MAJOR=6
+MIN_PLASMA_MINOR=8
+MIN_PLASMA_VERSION="${MIN_PLASMA_MAJOR}.${MIN_PLASMA_MINOR}"
 
 usage() {
     cat <<EOF
@@ -62,8 +75,16 @@ locking settings to change them.
 Install target: $TARGET
 Backup:         $BACKUP
 
-The original system lockscreen is backed up once on first install. The
-backup is preserved across reinstalls and is restored by --uninstall.
+Requires KDE Plasma ${MIN_PLASMA_VERSION} or newer.
+
+The original system lockscreen is backed up on first install and
+restored by --uninstall. Reinstalls keep the backup, except when a Plasma
+update has put stock files back in the target: the backup is then
+refreshed from those, so it always matches the installed Plasma.
+
+Plasma updates overwrite this theme with the stock lockscreen. Re-run
+with --apply after each one (after updating this repo, if the new
+Plasma release changed the lockscreen QML APIs).
 EOF
 }
 
@@ -216,7 +237,13 @@ ensure_target_exists() {
 # at best fail loudly and at worst leave the user with a broken lock
 # screen they can't easily revert without TTY access. Refuse early
 # with a clear message instead.
+#
+# With "--min", also refuse releases older than MIN_PLASMA_VERSION. The
+# install and test paths use it; --uninstall doesn't, so a user on an
+# older 6.x can always restore their backup.
 ensure_plasma6() {
+    local require_min=0
+    [[ "${1:-}" == "--min" ]] && require_min=1
     if ! command -v plasmashell >/dev/null 2>&1; then
         printf 'Error: plasmashell not found. This installer is for KDE Plasma 6.\n' >&2
         exit 1
@@ -234,6 +261,18 @@ ensure_plasma6() {
         printf 'a broken lock screen. Aborting.\n' >&2
         exit 1
     fi
+    if [[ "$require_min" -eq 1 ]]; then
+        local minor="${version#*.}"
+        minor="${minor%%.*}"
+        if [[ ! "$minor" =~ ^[0-9]+$ ]] || (( minor < MIN_PLASMA_MINOR )); then
+            printf 'Error: KDE Plasma %s or newer is required. Detected Plasma %s.\n' \
+                "$MIN_PLASMA_VERSION" "$version" >&2
+            printf 'This theme uses lockscreen QML APIs added in %s; on older releases\n' \
+                "$MIN_PLASMA_VERSION" >&2
+            printf 'the greeter would fall back to its built-in locker. Aborting.\n' >&2
+            exit 1
+        fi
+    fi
 }
 
 install_theme() {
@@ -241,7 +280,7 @@ install_theme() {
     local id
     id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
-    ensure_plasma6
+    ensure_plasma6 --min
     ensure_target_exists
 
     printf 'Installing %s\n' "$id"
@@ -357,7 +396,7 @@ test_theme() {
     local id
     id="Catppuccin-$(title "$flavor")-$(title "$accent")"
 
-    ensure_plasma6
+    ensure_plasma6 --min
     if [[ ! -x "$GREETER_BIN" ]]; then
         printf 'Error: greeter binary not found at %s\n' "$GREETER_BIN" >&2
         printf 'Adjust GREETER_BIN in this script if your distro installs it elsewhere.\n' >&2

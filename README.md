@@ -42,13 +42,15 @@ SPDX-License-Identifier: GPL-2.0-or-later
 ## Usage
 
 > [!IMPORTANT]
-> **KDE Plasma 6 only.** This theme targets Plasma 6's kscreenlocker
-> (tested on 6.6) and consumes Plasma 6 QML APIs. **Do not run the
-> installer on Plasma 5** — the system path it writes to and the QML
-> it ships are both incompatible, and applying it on Plasma 5 could
-> leave you with a broken lock screen. `install.sh` checks
-> `plasmashell --version` on startup and refuses to proceed on
-> anything other than `6.x`.
+> **KDE Plasma 6.8 or newer.** This theme targets Plasma 6's
+> kscreenlocker (tested on 6.8.2) and uses lockscreen QML APIs that
+> first shipped in 6.8 — on older releases the lock screen fails to
+> load and you get the plain built-in locker instead. **Do not run the
+> installer on Plasma 5**: the system path it writes to and the QML it
+> ships are both incompatible. `install.sh` checks
+> `plasmashell --version` on startup and refuses to install on anything
+> older than 6.8 (`--uninstall` only requires 6.x, so you can always
+> restore your backup).
 
 1. Ensure you have the [dependencies](#dependencies) for your distribution.
 2. Clone this repository:
@@ -90,6 +92,26 @@ To restore the original lockscreen:
 ./install.sh --uninstall --apply
 ```
 
+### After a Plasma update
+
+The directory this theme installs into belongs to your distribution's
+`plasma-desktop` package, so **every Plasma update puts the stock
+lockscreen back**. Re-apply afterwards:
+
+```bash
+git pull
+./install.sh --test    # check it still loads on the new Plasma
+./install.sh --apply
+```
+
+Pull first: a new Plasma release can change the lockscreen QML APIs
+(6.8 did), and an older copy of this theme may then fail to load. If
+`--test` shows the plain built-in locker instead of the theme, the
+release isn't supported yet — please open an issue. The installer
+refreshes its `lockscreen.bak` backup from the new stock files on these
+re-applies, so `--uninstall` always restores the lockscreen that matches
+your current Plasma.
+
 > Do **not** apply this package with `lookandfeeltool` / `plasma-apply-lookandfeel`.
 > Those tools replace your entire global theme (colour scheme, window
 > decoration, icons, cursor, splash) with whatever the package ships. We
@@ -130,9 +152,10 @@ This theme is not yet packaged in nixpkgs. Install manually with
 
 ## Configuration
 
-KDE's built-in screen-locking settings drive the "show clock" and "show
-media controls" toggles. Adjust them under **System Settings → Workspace
-→ Screen Locking**.
+KDE's built-in screen-locking settings drive when the clock is shown
+(always, only on the unlocking prompt, or never) and whether media
+controls appear. Adjust them under **System Settings → Workspace →
+Screen Locking**.
 
 Everything else lives in `contents/lockscreen/ThemeUserConfig.qml`:
 
