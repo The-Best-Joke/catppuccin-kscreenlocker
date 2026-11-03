@@ -155,14 +155,27 @@ EOF
 # the host's copy across the install instead. config.qml is its matching
 # System Settings config page; it belongs with the schema.
 #
-# Source of truth is the pristine backup when we have one, otherwise the
-# current target (still pristine on a first install).
+# Source of truth is the current target when it is stock (first install,
+# or a distro update just reinstalled the upstream files), otherwise the
+# pristine backup.
 HOST_CONFIG_FILES=(config.xml config.qml)
+
+# True when the target holds upstream's lockscreen rather than ours.
+# Distro package updates (e.g. Fedora's plasma-desktop RPM) reinstall
+# every file the package owns into $TARGET, overwriting our forks of
+# LockScreenUi.qml etc. while leaving our extra files (Cat*.qml, ...)
+# orphaned beside them. Our LockScreenUi.qml always imports the local
+# module as LockScreenLocal; upstream's never does.
+target_is_stock() {
+    [[ -r "$TARGET/LockScreenUi.qml" ]] && ! grep -q 'LockScreenLocal' "$TARGET/LockScreenUi.qml"
+}
 
 harvest_host_config() {
     local dest="$1"
     local src="$TARGET"
-    [[ -d "$BACKUP" ]] && src="$BACKUP"
+    if [[ -d "$BACKUP" ]] && ! target_is_stock; then
+        src="$BACKUP"
+    fi
 
     local f found=0
     for f in "${HOST_CONFIG_FILES[@]}"; do
@@ -253,6 +266,25 @@ install_theme() {
     if [[ ! -d "$BACKUP" ]]; then
         printf 'Backing up original lockscreen:\n'
         run_sudo cp -rp "$TARGET" "$BACKUP"
+    elif target_is_stock; then
+        # A distro update reinstalled upstream's lockscreen over ours.
+        # The old backup is now an older Plasma release's QML, which may
+        # not even load on this one, so re-snapshot it from the fresh
+        # upstream files. Our own leftovers (entries we ship that upstream
+        # doesn't, i.e. not in the old backup) are left out of it.
+        printf 'Upstream lockscreen was reinstalled (distro update?); refreshing backup:\n'
+        local entry ours_only=()
+        for entry in "$SCRIPT_DIR/contents/lockscreen/"*; do
+            entry="$(basename "$entry")"
+            [[ -e "$BACKUP/$entry" ]] || ours_only+=("$entry")
+        done
+        run_sudo rm -rf "$BACKUP"
+        run_sudo cp -rp "$TARGET" "$BACKUP"
+        for entry in "${ours_only[@]}"; do
+            if [[ -e "$TARGET/$entry" ]]; then
+                run_sudo rm -rf "$BACKUP/$entry"
+            fi
+        done
     else
         printf 'Backup already exists at %s -- not overwriting.\n' "$BACKUP"
     fi
